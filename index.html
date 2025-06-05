@@ -1,103 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>참석자 서명</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .row { margin-bottom: 20px; }
-    canvas { border: 1px solid #ccc; touch-action: none; }
-    input[type="text"] { padding: 5px; font-size: 16px; }
-    button { padding: 10px 15px; font-size: 16px; margin-top: 10px; }
-  </style>
-</head>
-<body>
-  <h2>참석자 서명</h2>
-  <div class="row">
-    <label>이름: <input type="text" id="name" /></label>
-  </div>
-  <div class="row">
-    <canvas id="sigCanvas" width="300" height="100"></canvas><br/>
-    <button onclick="clearCanvas()">지우기</button>
-  </div>
-  <button onclick="submitForm()">제출</button>
+<script>
+  const canvas = document.getElementById("sigCanvas");
+  const ctx = canvas.getContext("2d");
 
-  <script>
-    const canvas = document.getElementById("sigCanvas");
-    const ctx = canvas.getContext("2d");
-    let drawing = false;
+  function submitForm() {
+    const name = document.getElementById("name").value.trim();
+    if (!name) return alert("이름을 입력해주세요.");
 
-    canvas.addEventListener("mousedown", () => {
-      drawing = true;
-      ctx.beginPath();
+    const signature = canvas.toDataURL("image/png");
+
+    const formData = new URLSearchParams();
+    formData.append("name", name);
+    formData.append("signature", signature);
+
+    fetch("https://script.google.com/macros/s/AKfycbwrWTznFUdPdOxhODKxlvTkvRRe1cTr6IntOPQzJcmWqw6B2FTjbfV2cmVhPgH6hPW-/exec", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) return response.json();
+      throw new Error("네트워크 응답 오류");
+    })
+    .then(data => {
+      alert("서명이 저장되었습니다.");
+      clearCanvas();
+      document.getElementById("name").value = "";
+    })
+    .catch(error => {
+      console.error("Fetch error:", error);
+      alert("오류 발생: " + error.message);
     });
-    canvas.addEventListener("mouseup", () => drawing = false);
-    canvas.addEventListener("mousemove", draw);
+  }
 
-    canvas.addEventListener("touchstart", (e) => {
-      drawing = true;
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      ctx.beginPath();
-      ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-    });
-    canvas.addEventListener("touchend", () => drawing = false);
-    canvas.addEventListener("touchmove", (e) => {
-      e.preventDefault();
-      if (!drawing) return;
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      drawPoint(touch.clientX - rect.left, touch.clientY - rect.top);
-    });
-
-    function draw(e) {
-      if (!drawing) return;
-      const rect = canvas.getBoundingClientRect();
-      drawPoint(e.clientX - rect.left, e.clientY - rect.top);
-    }
-
-    function drawPoint(x, y) {
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#000";
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    }
-
-    function clearCanvas() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function submitForm() {
-      const name = document.getElementById("name").value.trim();
-      if (!name) return alert("이름을 입력해주세요.");
-
-      const signature = canvas.toDataURL("image/png");
-
-      fetch("https://script.google.com/macros/s/AKfycbyTPsff-nElVapxf6I_vb4Hh3DAxVH0DVo_FWhw0YrTwbNKcGSQPvHar3f0oNDl8qkv/exec", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name, signature }),
-        redirect: 'follow'
-      })
-      .then(response => {
-        if (response.ok) return response.json();
-        throw new Error('Network response was not ok.');
-      })
-      .then(data => {
-        alert("서명이 저장되었습니다.");
-        clearCanvas();
-        document.getElementById("name").value = "";
-      })
-      .catch(error => {
-        console.error('There was a problem with the fetch operation:', error);
-        alert("오류 발생: " + error.message);
-      });
-    }
-  </script>
-</body>
-</html>
+  function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+</script>
