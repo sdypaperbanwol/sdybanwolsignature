@@ -27,7 +27,6 @@
     const ctx = canvas.getContext("2d");
     let drawing = false;
 
-    // 마우스
     canvas.addEventListener("mousedown", () => {
       drawing = true;
       ctx.beginPath();
@@ -35,7 +34,6 @@
     canvas.addEventListener("mouseup", () => drawing = false);
     canvas.addEventListener("mousemove", draw);
 
-    // 터치
     canvas.addEventListener("touchstart", (e) => {
       drawing = true;
       const touch = e.touches[0];
@@ -75,23 +73,29 @@
     function submitForm() {
       const name = document.getElementById("name").value.trim();
       if (!name) return alert("이름을 입력해주세요.");
-      
+
       const signature = canvas.toDataURL("image/png");
 
-      fetch("https://script.google.com/macros/s/AKfycbyOu9tlVSYxmA7zAVQrtPVpYr9JXgpKt7W2Er1dceILzT-_UIlWnEgIIud8S-fh-TsP/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, signature })
+      fetch("https://script.google.com/macros/s/AKfycbzZ5kt-HaiGN1W-hjBXyQNwk5LdMeTQ8DhX249xa4svOTQ_7karg6J1Rr0By2Gf2PM/exec", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, signature }),
+        redirect: 'follow'
       })
-      .then(res => res.text())
-      .then(res => {
+      .then(response => {
+        if (response.ok) return response.json();
+        throw new Error('Network response was not ok.');
+      })
+      .then(data => {
         alert("서명이 저장되었습니다.");
         clearCanvas();
         document.getElementById("name").value = "";
       })
-      .catch(err => {
-        console.error(err);
-        alert("오류 발생: " + err.message);
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        alert("오류 발생: " + error.message);
       });
     }
   </script>
